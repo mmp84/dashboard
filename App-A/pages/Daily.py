@@ -1,11 +1,13 @@
 import dash
 from dash import dcc, html, callback, Output, Input
+from dash.exceptions import PreventUpdate
 from dash_core_components import Tabs
 import plotly.express as px
 import pandas as pd
 from PIL import Image
+from dash_html_components import Img
 
-dash.register_page(__name__, path='/',description='Daily charts.', title='Daily',)
+dash.register_page(__name__, path='/', description='Daily charts.', title='Daily',)
 
 df_4G = pd.read_csv("data/4G.csv")
 df_5G = pd.read_csv("data/5G.csv")
@@ -33,9 +35,9 @@ df_iot['Date'] = pd.to_datetime(df_iot['Date'])
 df_iot.set_index('Date', inplace=True)
 df_2G.head()
 
-#layout of the page
+# Layout of the page
 layout = html.Div([
-    #html.Img(src='https://github.com/mmp84/dashboard/blob/main/huawei.png', style={'width': 'auto', 'height': 'auto'}),
+    # html.Img(src='https://github.com/mmp84/dashboard/blob/main/huawei.png', style={'width': 'auto', 'height': 'auto'}),
 
     html.H1("Daily Performance Dashboard", style={'textAlign': 'center', 'fontSize': 30}),
 
@@ -45,13 +47,12 @@ layout = html.Div([
         id='category-dropdown',
         multi=True,
         value=[df_4G.iloc[:, 0].unique()[0]],
-        style={'width': '50%'},   # Set the default value to the first category in df_4G
+        style={'width': '50%'},  # Set the default value to the first category in df_4G
     ),
 
     # Date range picker
     dcc.DatePickerRange(
         id='date-picker-range',
-
     ),
 
     # Tabs for 4G and 5G Data
@@ -66,7 +67,19 @@ layout = html.Div([
 
     # Dynamically generated charts in a grid layout
 
-    html.Div(id='charts-container', style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center'}),
+    html.Div(
+        [
+            # Wrap your charts in dcc.Loading component
+            dcc.Loading(
+                id="loading-charts",
+                type="circle",  # other types include "default", "circle", "dot", "default"
+                children=[
+                    html.Div(id='charts-container', style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center'}),
+                ]
+            )
+        ],
+        style={'padding': '20px'}
+    ),
 
 ])
 
@@ -129,25 +142,25 @@ def update_charts(selected_tab, selected_categories, start_date, end_date):
     else:
         selected_categories_list = selected_categories if isinstance(selected_categories, list) else [selected_categories]
 
-    filtered_df = dataframe[(dataframe.iloc[:, 0].isin(selected_categories_list)) & (dataframe.index >= start_date) & (dataframe.index <= end_date)]
- 
-
+    filtered_df = dataframe[
+        (dataframe.iloc[:, 0].isin(selected_categories_list)) & (dataframe.index >= start_date) & (
+                    dataframe.index <= end_date)]
     # Generate charts dynamically
     charts = []
     for column in filtered_df.columns[2:]:
-        fig = px.line(filtered_df, x=filtered_df.index, y=column, color=filtered_df.iloc[:, 0], line_group=filtered_df.iloc[:, 0],
-                      #labels={'index': 'Date', column: f'{column}'},
+        fig = px.line(filtered_df, x=filtered_df.index, y=column, color=filtered_df.iloc[:, 0],
+                      line_group=filtered_df.iloc[:, 0],
                       template='simple_white',
                       height=400,
-                      width=600)
+                      width=600)  # Set an initial width in pixels
 
         # Customize legend
         fig.update_layout(
             title={
-            'text': f'{column}',
-            'font': {'size': 16, 'family': 'Arial, sans-serif', 'color': 'black'},
+                'text': f'<b>{column}</b>',
+                'font': {'size': 16, 'family': 'Arial, sans-serif', 'color': 'black'},
             },
-         xaxis_title='Date',
+            xaxis_title='Date',
             yaxis_title='',
             legend=dict(title='', orientation='h', y=1.1, x=0),
             font=dict(family='Arial, sans-serif', size=12, color='black'),  # Set font properties
@@ -155,17 +168,23 @@ def update_charts(selected_tab, selected_categories, start_date, end_date):
             title_x=0.5,  # Center-align the title
             title_yanchor='bottom',  # Align the title at the top
             title_font=dict(size=16, family='Arial, sans-serif', color='black')  # Set title font properties
-
-
- 
-    #paper_bgcolor='rgba(0,0,0,0)',  # Set the background color of the plot area
-    #plot_bgcolor='rgba(0,0,0,0)',  # Set the background color of the chart
-)
-        #fig.update_layout(legend=dict(title='', orientation='h', y=1.2))
+        )
 
         chart = dcc.Graph(id=f'chart-{column}', figure=fig)
-        charts.append(html.Div(chart, style={'width': '28%', 'padding': '10px', 'margin': 'auto'}))
+        charts.append(
+            html.Div(chart, style={'width': '30%', 'padding': '10px', 'margin': 'auto'}))  # Adjust width as needed
 
-    return charts
+    # Arrange the charts in rows
+    charts_container = html.Div(charts,
+                                style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center'})
 
+    # Wrap your charts in dcc.Loading component
+    loading_charts = dcc.Loading(
+        id="loading-charts",
+        type="circle",  # other types include "default", "circle", "dot", "default"
+        children=[charts_container]
+    )
+
+    # Update the Output to use loading_charts
+    return loading_charts
 
