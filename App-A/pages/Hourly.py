@@ -49,10 +49,7 @@ df_iot_h['Date'] = pd.to_datetime(df_iot_h['Date']).dt.strftime('%Y-%m-%d')
 df_iot_h['Time'] = pd.to_datetime(df_iot_h['Time'])
 df_iot_h['Time'] = df_iot_h['Time'].dt.strftime('%H:%M:%S')
 df_iot_h.set_index('Date', inplace=True)
-# Set the default category to 'Southern Region' in the dropdown
-#default_category = 'Southern Region'
 
-# Calculate default start and end dates for the date picker (3 days by default)
 today = datetime.now().date()
 yesterday = today - timedelta(days=1)
 last_week = today - timedelta(weeks=1)
@@ -65,7 +62,7 @@ layout = html.Div(
         html.H1("Hourly Performance Dashboard", style={'textAlign': 'center', 'fontSize': 30}),
         html.Label("Select Cluster", style={'fontSize': 20}),
     #Dropdown for selecting category
-        dcc.Dropdown(id='category-dropdown_h',multi=False , style={'width': '50%'}),
+        dcc.Dropdown(id='category-dropdown_h', multi=False, style={'width': '50%'}, value=df_4G_h.iloc[:, 1].unique()[0]),
     # Date range picker
         dcc.DatePickerRange(
             id='date-picker-range_h',
@@ -82,9 +79,20 @@ layout = html.Div(
         dcc.Tab(label='2G Data', value='tab-2G_h'),
         dcc.Tab(label='IOT Data', value='tab-IOT_h'),
     ]),
+        html.Div(
+        [
+            # Wrap your charts in dcc.Loading component
+            dcc.Loading(
+                id="loading-charts_h",
+                type="circle",  # other types include "default", "circle", "dot", "default"
+                children=[
+                    html.Div(id='charts-container_h', style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center'}),
+                ]
+            )
+        ],
+        style={'padding': '20px'})
 
-
-    html.Div(id='charts-container_h', style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center'}),
+    #tml.Div(id='charts-container_h', style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center'}),
     ])
 #Callback to update category dropdown and date picker based on selected tab
 @callback(
@@ -154,26 +162,11 @@ def update_charts(selected_tab, selected_categories, start_date, end_date):
     #selected_categories_list = selected_categories if selected_categories else [default_category]
 
     filtered_df_h = dataframe_h[(dataframe_h.iloc[:,1].isin(selected_categories_list)) & (dataframe_h.index >= start_date) & (dataframe_h.index <= end_date)]
-    #filtered_df_h.index = pd.to_datetime(filtered_df_h.index)
-    # Get today, yesterday, and same day last week
-    #today = datetime.now().date()
-    #yesterday = today - timedelta(days=1)
-    #last_week = today - timedelta(weeks=1)
 
-    # Convert to string format
-    # today_str = today.strftime('%Y-%m-%d')
-    # yesterday_str = yesterday.strftime('%Y-%m-%d')
-    # last_week_str = last_week.strftime('%Y-%m-%d')
-
-    # Create a list of undesired dates
-    #undesired_dates = [date.strftime('%Y-%m-%d') for date in filtered_df_h.index if date not in [today, yesterday, last_week]]
 
     numerical_columns = filtered_df_h.columns[3:]
     filtered_df_h = filtered_df_h.reset_index()
-    #filtered_df_h['Date'] = pd.to_datetime(filtered_df_h['Date']).dt.strftime('%Y-%m-%d')
 
-    #filtered_df_h.info()
-    #print("Printting filtered df \n", filtered_df_h.head())
 
 
 # Generate charts dynamically
@@ -187,7 +180,12 @@ def update_charts(selected_tab, selected_categories, start_date, end_date):
                       width=600)
 
         # Customize legend
-        fig.update_layout(legend=dict(title='', orientation='h', y=1.3))
+        fig.update_layout(legend=dict(title='', orientation='h', y=1.3), 
+                            yaxis_title={
+                'text': f'<b>{column}</b>',
+                'font': {'size': 16, 'family': 'Arial, sans-serif', 'color': 'black'},
+            },)
+
         
         # Exclude undesired dates from the x-axis
         # for trace in fig.data:
