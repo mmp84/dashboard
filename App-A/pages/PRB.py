@@ -22,23 +22,26 @@ clusters_options = [{'label': cluster, 'value': cluster} for cluster in df['Clus
 initial_center = [df['lat'].mean(), df['long'].mean()]
 m = folium.Map(location=initial_center, zoom_start=10)
 
-layout = html.Div([
-    html.H1("PRB Sector Load", style={'textAlign': 'center', 'fontSize': 30}),
+layout = html.Div(
+    children=[
+        html.H1("PRB Sector Load", style={'textAlign': 'center', 'fontSize': 30}),
 
+        dcc.Dropdown(
+            id='cluster-selector',
+            options=clusters_options,
+            style={'width': '50%'},
+            multi=False,
+        ),
 
-    dcc.Dropdown(
-        id='cluster-selector',
-        options=clusters_options,
-        value=clusters_options[0]['value'],  # Set default value
-        style={'width': '50%'}, 
-        multi= False,
-    ),
-    html.Iframe(
-        id='folium-map',
-        srcDoc=m._repr_html_(),
-        width='100%', height= '800',
-    ),
-])
+        html.Iframe(
+            id='folium-map',
+            srcDoc=m._repr_html_(),
+            width='100%',
+            style={'height': '75vh'},  # Set height to 100% of the viewport height
+        ),
+    ]
+)
+
 # Callback to update map based on cluster selection
 @callback(
     Output('folium-map', 'srcDoc'),
