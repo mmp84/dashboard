@@ -15,8 +15,8 @@ df_4G_h = pd.read_csv("data/4G_h.csv")
 df_5G_h = pd.read_csv("data/5G_h.csv")
 df_3G_h = pd.read_csv("data/3G_h.csv")
 df_2G_h = pd.read_csv("data/2G_h.csv")
-df_volte_h = pd.read_csv("data/volte_h.csv")
-df_iot_h = pd.read_csv("data/iot_h.csv")
+df_volte_h = pd.read_csv("data/Volte_h.csv")
+df_iot_h = pd.read_csv("data/IOT_h.csv")
 
 
 df_4G_h['Date'] = pd.to_datetime(df_4G_h['Date']).dt.strftime('%Y-%m-%d')
