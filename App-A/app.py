@@ -44,7 +44,9 @@ app.layout = html.Div([
             ]),
             html.Hr(),
             dbc.Row([sidebar]),
-            dbc.Row([dash.page_container])
+            # Wrap dash.page_container in dcc.Loading
+            dbc.Row([dash.page_container]),
+            
         ],
         fluid=True
     )
