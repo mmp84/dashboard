@@ -1,6 +1,0 @@
-dash==2.6.0
-dash-bootstrap-components
-pandas
-Pillow
-folium
-gunicorn
